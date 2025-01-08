@@ -1,6 +1,6 @@
 # Clusters and Environments
 
-You can add your existing Kubernetes clusters and environments on the `Clusters and Environments` section. You must have a [super admin](https://docs.devtron.ai/global-configurations/authorization/user-access#assign-super-admin-permissions) access to add a cluster.
+You can add your existing Kubernetes clusters and environments on the `Clusters and Environments` section. You must have a [super admin](./authorization/user-access.md#assign-super-admin-permissions) access to add a cluster.
 
 ![](https://devtron-public-asset.s3.us-east-2.amazonaws.com/images/global-configurations/cluster-and-environments/cluster-and-environments.png)
 
@@ -35,8 +35,7 @@ You can get the **`Server URL`** & **`Bearer Token`** by running the following c
 {% tab title="k8s Cluster Providers" %}
 If you are using EKS, AKS, GKE, Kops, Digital Ocean managed Kubernetes, run the following command to generate the server URL and bearer token:
 ```bash
-curl -O https://raw.githubusercontent.com/devtron-labs/utilities/main/kubeconfig-exporter/kubernetes_export_sa.sh \ 
-&& bash kubernetes_export_sa.sh cd-user  devtroncd
+curl -O https://raw.githubusercontent.com/devtron-labs/utilities/main/kubeconfig-exporter/kubernetes_export_sa.sh && bash kubernetes_export_sa.sh cd-user  devtroncd
 ```
 {% endtab %}
 {% tab title="Microk8s Cluster" %}

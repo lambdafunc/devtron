@@ -1,23 +1,23 @@
 /*
- * Copyright (c) 2020 Devtron Labs
+ * Copyright (c) 2020-2024. Devtron Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package app
 
 import (
+	"errors"
 	"github.com/devtron-labs/devtron/api/bean"
 	"github.com/devtron-labs/devtron/internal/sql/repository/helper"
 	"go.uber.org/zap"
@@ -61,12 +61,16 @@ func (impl *AppListingViewBuilderImpl) BuildView(fetchAppListingRequest FetchApp
 
 	var appContainersResponses []*bean.AppContainer
 	for k, v := range filteredAppEnvMap {
-		appId, err := strconv.Atoi(strings.Split(k, "_")[0])
+		appIdAndName := strings.Split(k, "_")
+		if len(appIdAndName) != 2 {
+			return []*bean.AppContainer{}, errors.New("invalid format for app id and name. It should be in format <appId>_<appName>")
+		}
+		appId, err := strconv.Atoi(appIdAndName[0])
 		if err != nil {
 			impl.Logger.Error("err", err)
 			return []*bean.AppContainer{}, nil
 		}
-		appName := strings.Split(k, "_")[1]
+		appName := appIdAndName[1]
 		defaultEnv := bean.AppEnvironmentContainer{}
 		projectId := 0
 		for _, env := range v {
