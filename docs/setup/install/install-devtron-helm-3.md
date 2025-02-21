@@ -7,7 +7,9 @@ Install [Helm3](https://helm.sh/docs/intro/install/).
 ## Installing Devtron using Helm
 
 1. Add Devtron repository
-2. Install Devtron
+2. Update Devtron repository
+3. Install Devtron
+
 
 {% tabs %}
 {% tab title="Install with default configurations" %}
@@ -15,6 +17,8 @@ This installation will use Minio for storing build logs and cache.
 
 ```bash
 helm repo add devtron https://helm.devtron.ai
+
+helm repo update devtron
 
 helm install devtron devtron/devtron-operator --create-namespace --namespace devtroncd \
 --set installer.modules={cicd}
@@ -26,6 +30,7 @@ This installation will use AWS s3 buckets for storing build logs and cache. Refe
 
 ```bash
 helm repo add devtron https://helm.devtron.ai
+helm repo update devtron
 helm install devtron devtron/devtron-operator --create-namespace --namespace devtroncd \
 --set installer.modules={cicd} \
 --set configs.BLOB_STORAGE_PROVIDER=S3 \
@@ -42,6 +47,7 @@ Refer to the `Azure specific` parameters on the [Storage for Logs and Cache](./i
 
 ```bash
 helm repo add devtron https://helm.devtron.ai
+helm repo update devtron
 helm install devtron devtron/devtron-operator --create-namespace --namespace devtroncd \
 --set installer.modules={cicd} \
 --set secrets.AZURE_ACCOUNT_KEY=xxxxxxxxxx \
@@ -73,7 +79,7 @@ We also release beta versions of devtron every few days before the stable releas
 
 This chart is currently not available on the official helm repository therefore you need to download it to install it.
 
-1. Clone Devtron Repositry 
+1. Clone Devtron Repository 
 2. Upgrade Helm Dependency
 3. Install Devtron
 
@@ -171,6 +177,12 @@ If you don't see any results or receive a message that says "service doesn't exi
 | devtron.yourdomain.com | CNAME | aaff16e9760594a92afa0140dbfd99f7-305259315.us-east-1.elb.amazonaws.com |
 
 ### Devtron Admin credentials
+
+When you install Devtron for the first time, it creates a default admin user and password (with unrestricted access to Devtron). You can use that credentials to log in as an administrator. 
+
+After the initial login, we recommend you set up any SSO service like Google, GitHub, etc., and then add other users (including yourself). Subsequently, all the users can use the same SSO (let's say, GitHub) to log in to Devtron's dashboard.
+
+The section below will help you understand the process of getting the administrator credentials.
 
 #### For Devtron version v0.6.0 and higher
 

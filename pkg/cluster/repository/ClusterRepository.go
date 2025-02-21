@@ -1,18 +1,17 @@
 /*
- * Copyright (c) 2020 Devtron Labs
+ * Copyright (c) 2020-2024. Devtron Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package repository
@@ -21,13 +20,14 @@ import (
 	"github.com/devtron-labs/devtron/pkg/sql"
 	"github.com/go-pg/pg"
 	"go.uber.org/zap"
-	"k8s.io/client-go/rest"
+	"time"
 )
 
 type Cluster struct {
 	tableName              struct{}          `sql:"cluster" pg:",discard_unknown_columns"`
 	Id                     int               `sql:"id,pk"`
 	ClusterName            string            `sql:"cluster_name"`
+	Description            string            `sql:"description"`
 	ServerUrl              string            `sql:"server_url"`
 	PrometheusEndpoint     string            `sql:"prometheus_endpoint"`
 	Active                 bool              `sql:"active,notnull"`
@@ -42,7 +42,15 @@ type Cluster struct {
 	ErrorInConnecting      string            `sql:"error_in_connecting"`
 	IsVirtualCluster       bool              `sql:"is_virtual_cluster"`
 	InsecureSkipTlsVerify  bool              `sql:"insecure_skip_tls_verify"`
+	IsProd                 bool              `sql:"is_prod"`
 	sql.AuditLog
+}
+
+func (c *Cluster) IsEmpty() bool {
+	if c == nil {
+		return true
+	}
+	return c.Id == 0
 }
 
 type ClusterRepository interface {
@@ -51,14 +59,17 @@ type ClusterRepository interface {
 	FindOneActive(clusterName string) (*Cluster, error)
 	FindAll() ([]Cluster, error)
 	FindAllActive() ([]Cluster, error)
+	FindAllActiveExceptVirtual() ([]Cluster, error)
 	FindById(id int) (*Cluster, error)
 	FindByIds(id []int) ([]Cluster, error)
 	Update(model *Cluster) error
+	SetDescription(id int, description string, userId int32) error
 	Delete(model *Cluster) error
 	MarkClusterDeleted(model *Cluster) error
 	UpdateClusterConnectionStatus(clusterId int, errorInConnecting string) error
 	FindActiveClusters() ([]Cluster, error)
 	SaveAll(models []*Cluster) error
+	FindByNames(clusterNames []string) ([]*Cluster, error)
 }
 
 func NewClusterRepositoryImpl(dbConnection *pg.DB, logger *zap.SugaredLogger) *ClusterRepositoryImpl {
@@ -71,19 +82,6 @@ func NewClusterRepositoryImpl(dbConnection *pg.DB, logger *zap.SugaredLogger) *C
 type ClusterRepositoryImpl struct {
 	dbConnection *pg.DB
 	logger       *zap.SugaredLogger
-}
-
-func (cluster Cluster) GetClusterConfig() *rest.Config {
-	configMap := cluster.Config
-	bearerToken := configMap["bearer_token"]
-	config := &rest.Config{
-		Host:        cluster.ServerUrl,
-		BearerToken: bearerToken,
-		TLSClientConfig: rest.TLSClientConfig{
-			Insecure: true,
-		},
-	}
-	return config
 }
 
 func (impl ClusterRepositoryImpl) Save(model *Cluster) error {
@@ -140,6 +138,16 @@ func (impl ClusterRepositoryImpl) FindAllActive() ([]Cluster, error) {
 	return clusters, err
 }
 
+func (impl ClusterRepositoryImpl) FindAllActiveExceptVirtual() ([]Cluster, error) {
+	var clusters []Cluster
+	err := impl.dbConnection.
+		Model(&clusters).
+		Where("active=?", true).
+		Where("is_virtual_cluster=? OR is_virtual_cluster IS NULL", false).
+		Select()
+	return clusters, err
+}
+
 func (impl ClusterRepositoryImpl) FindById(id int) (*Cluster, error) {
 	cluster := &Cluster{}
 	err := impl.dbConnection.
@@ -151,6 +159,15 @@ func (impl ClusterRepositoryImpl) FindById(id int) (*Cluster, error) {
 	return cluster, err
 }
 
+func (impl ClusterRepositoryImpl) FindByNames(clusterNames []string) ([]*Cluster, error) {
+	var cluster []*Cluster
+	err := impl.dbConnection.
+		Model(&cluster).
+		Where("cluster_name in (?)", pg.In(clusterNames)).
+		Where("active = ?", true).
+		Select()
+	return cluster, err
+}
 func (impl ClusterRepositoryImpl) FindByIds(id []int) ([]Cluster, error) {
 	var cluster []Cluster
 	err := impl.dbConnection.
@@ -163,6 +180,13 @@ func (impl ClusterRepositoryImpl) FindByIds(id []int) ([]Cluster, error) {
 
 func (impl ClusterRepositoryImpl) Update(model *Cluster) error {
 	return impl.dbConnection.Update(model)
+}
+
+func (impl ClusterRepositoryImpl) SetDescription(id int, description string, userId int32) error {
+	_, err := impl.dbConnection.Model((*Cluster)(nil)).
+		Set("description = ?", description).Set("updated_by = ?", userId).Set("updated_on = ?", time.Now()).
+		Where("id = ?", id).Update()
+	return err
 }
 
 func (impl ClusterRepositoryImpl) Delete(model *Cluster) error {

@@ -1,22 +1,39 @@
+/*
+ * Copyright (c) 2024. Devtron Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package notifier
 
 import (
 	"fmt"
+	"github.com/devtron-labs/devtron/pkg/notifier/adapter"
+	"github.com/devtron-labs/devtron/pkg/notifier/beans"
+	"testing"
+
 	"github.com/devtron-labs/devtron/internal/sql/repository"
 	mocks2 "github.com/devtron-labs/devtron/internal/sql/repository/mocks"
 	util2 "github.com/devtron-labs/devtron/internal/util"
 	"github.com/devtron-labs/devtron/pkg/team/mocks"
 	"github.com/stretchr/testify/mock"
 
-	//"github.com/devtron-labs/devtron/pkg/user/repository"
-	mocks3 "github.com/devtron-labs/devtron/pkg/user/repository/mocks"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func Test_buildWebhookNewConfigs(t *testing.T) {
 	type args struct {
-		webhookReq []WebhookConfigDto
+		webhookReq []beans.WebhookConfigDto
 		userId     int32
 	}
 	tests := []struct {
@@ -27,11 +44,11 @@ func Test_buildWebhookNewConfigs(t *testing.T) {
 		{
 			name: "test1",
 			args: args{
-				webhookReq: []WebhookConfigDto{
+				webhookReq: []beans.WebhookConfigDto{
 					{
 						WebhookUrl: "dfcd nmc dc",
 						ConfigName: "aditya",
-						Payload:    map[string]interface{}{"text": "final"},
+						Payload:    "{\"text\": \"final\"}",
 						Header:     map[string]interface{}{"Content-type": "application/json"},
 					},
 				},
@@ -41,7 +58,7 @@ func Test_buildWebhookNewConfigs(t *testing.T) {
 				{
 					WebHookUrl: "dfcd nmc dc",
 					ConfigName: "aditya",
-					Payload:    map[string]interface{}{"text": "final"},
+					Payload:    "{\"text\": \"final\"}",
 					Header:     map[string]interface{}{"Content-type": "application/json"},
 				},
 			},
@@ -50,7 +67,7 @@ func Test_buildWebhookNewConfigs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := buildWebhookNewConfigs(tt.args.webhookReq, tt.args.userId)
+			got := adapter.BuildWebhookNewConfigs(tt.args.webhookReq, tt.args.userId)
 
 			assert.Equal(t, len(tt.want), len(got), "Number of webhook configs mismatch")
 
@@ -70,11 +87,11 @@ func TestWebhookNotificationServiceImpl_SaveOrEditNotificationConfig(t *testing.
 	assert.Nil(t, err)
 	mockedTeamService := mocks.NewTeamService(t)
 	mockedWebhookNotfRep := mocks2.NewWebhookNotificationRepository(t)
-	mockedUserRepo := mocks3.NewUserRepository(t)
+	//mockedUserRepo := mocks3.NewUserRepository(t)
 	mockedNotfSetRepo := mocks2.NewNotificationSettingsRepository(t)
 
 	type args struct {
-		channelReq []WebhookConfigDto
+		channelReq []beans.WebhookConfigDto
 		userId     int32
 	}
 
@@ -87,11 +104,11 @@ func TestWebhookNotificationServiceImpl_SaveOrEditNotificationConfig(t *testing.
 		{
 			name: "SaveOrUpdate_ExistingConfig",
 			args: args{
-				channelReq: []WebhookConfigDto{
+				channelReq: []beans.WebhookConfigDto{
 					{
 						WebhookUrl: "djfndgfbd,gds",
 						ConfigName: "aditya",
-						Payload:    map[string]interface{}{"text": "final"},
+						Payload:    "{\"text\": \"final\"}",
 						Header:     map[string]interface{}{"Content-type": "application/json"},
 					},
 				},
@@ -103,11 +120,11 @@ func TestWebhookNotificationServiceImpl_SaveOrEditNotificationConfig(t *testing.
 		{
 			name: "SaveOrUpdate_NewConfig",
 			args: args{
-				channelReq: []WebhookConfigDto{
+				channelReq: []beans.WebhookConfigDto{
 					{
 						WebhookUrl: "d,fm sdfd",
 						ConfigName: "aditya",
-						Payload:    map[string]interface{}{"text": "final"},
+						Payload:    "{\"text\": \"final\"}",
 						Header:     map[string]interface{}{"Content-type": "application/json"},
 					},
 				},
@@ -124,7 +141,7 @@ func TestWebhookNotificationServiceImpl_SaveOrEditNotificationConfig(t *testing.
 				logger:                         sugaredLogger,
 				webhookRepository:              mockedWebhookNotfRep,
 				teamService:                    mockedTeamService,
-				userRepository:                 mockedUserRepo,
+				userRepository:                 nil,
 				notificationSettingsRepository: mockedNotfSetRepo,
 			}
 
